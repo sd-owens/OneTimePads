@@ -35,6 +35,22 @@ char convertToChar(int i) {
   return c;
 }
 
+void encrypt(char *msg, char *key) {
+
+  int i = 0;
+  char temp;
+
+  while (msg[i] != '\n') {
+    
+    char c = msg[i];
+    // convert to ascii code and encrypt
+    temp = (convertToInt(msg[i]) + convertToInt(key[i])) % 27;
+    msg[i] = convertToInt(temp);
+    i++;
+  }
+
+}
+
 // Set up the address struct for the server socket
 void setupAddressStruct(struct sockaddr_in* address, 
                         int portNumber){
