@@ -12,6 +12,29 @@ void error(const char *msg) {
   exit(1);
 } 
 
+int convertToInt (char c) {
+
+  int value = 0;
+
+  if ( c == ' ')
+    value = 26;
+  else
+    value = c - 'A';  // character arithmetic for ascii value
+
+  return value;
+}
+
+char convertToChar(int i) {
+  char c;
+
+  if (i == 26)
+    char = ' ';
+  else 
+    char = i + 'A';
+  
+  return c;
+}
+
 // Set up the address struct for the server socket
 void setupAddressStruct(struct sockaddr_in* address, 
                         int portNumber){
