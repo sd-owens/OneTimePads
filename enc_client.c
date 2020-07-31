@@ -20,6 +20,21 @@ void error(const char *msg) {
   exit(0); 
 } 
 
+int getNumBytes(const char *name){
+  int numBytes = 0;
+
+  FILE *file = fopen(name, "r");
+
+  char c = fgetc(file);
+
+  //TODO clean this up with DeMorgans Law
+  while (c != '\n' || c != EOF){
+    numBytes++;
+    c = fgetc(file);
+  }
+   
+}
+
 // Set up the address struct
 void setupAddressStruct(struct sockaddr_in* address, 
                         int portNumber, 
@@ -46,6 +61,7 @@ void setupAddressStruct(struct sockaddr_in* address,
 }
 
 int main(int argc, char *argv[]) {
+
   int socketFD, portNumber, charsWritten, charsRead;
   struct sockaddr_in serverAddress;
   char buffer[256];
@@ -68,6 +84,15 @@ int main(int argc, char *argv[]) {
   if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0){
     error("CLIENT: ERROR connecting");
   }
+
+  int fileBytes = getNumBytes(argv[1]);
+  int keyBytes = getNumBytes(argv[2]);
+
+  if(fileBytes > keyBytes) {
+      printf("Key to too short!\n");
+      error("Key is too short!\n");
+  }
+
   // Get input message from user
   printf("CLIENT: Enter text to send to the server, and then hit enter: ");
   // Clear out the buffer array
