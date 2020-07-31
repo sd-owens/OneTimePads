@@ -72,6 +72,8 @@ int main(int argc, char *argv[]){
   struct sockaddr_in serverAddress, clientAddress;
   socklen_t sizeOfClientInfo = sizeof(clientAddress);
 
+  pid_t pid;
+
   // Check usage & args
   if (argc < 2) { 
     fprintf(stderr,"USAGE: %s port\n", argv[0]); 
@@ -107,25 +109,40 @@ int main(int argc, char *argv[]){
       error("ERROR on accept");
     }
 
-    printf("SERVER: Connected to client running at host %d port %d\n", 
+    
+    pid = fork();
+
+    switch(pid){
+      case -1:{
+        error("failed to fork process!\n");
+      }
+      case 0:{
+        printf("SERVER: Connected to client running at host %d port %d\n", 
                           ntohs(clientAddress.sin_addr.s_addr),
                           ntohs(clientAddress.sin_port));
 
-    // Get the message from the client and display it
-    memset(buffer, '\0', 256);
-    // Read the client's message from the socket
-    charsRead = recv(connectionSocket, buffer, 255, 0); 
-    if (charsRead < 0){
-      error("ERROR reading from socket");
-    }
-    printf("SERVER: I received this from the client: \"%s\"\n", buffer);
+        // Get the message from the client and display it
+        memset(buffer, '\0', 256);
+        // Read the client's message from the socket
+        charsRead = recv(connectionSocket, buffer, 255, 0); 
+        if (charsRead < 0){
+          error("ERROR reading from socket");
+        }
+        printf("SERVER: I received this from the client: \"%s\"\n", buffer);
 
-    // Send a Success message back to the client
-    charsRead = send(connectionSocket, 
-                    "I am the server, and I got your message", 39, 0); 
-    if (charsRead < 0){
-      error("ERROR writing to socket");
+        // Send a Success message back to the client
+        charsRead = send(connectionSocket, 
+                        "I am the server, and I got your message", 39, 0); 
+        if (charsRead < 0){
+          error("ERROR writing to socket");
+        }
+      }
+      default:{
+        pid_t actualpid = waitpid(pid, &status, WNOHANG);
+      }
+      
     }
+
     // Close the connection socket for this client
     close(connectionSocket); 
   }
