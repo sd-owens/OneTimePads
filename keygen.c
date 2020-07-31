@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     int length = atoi(argv[1]);
     char key[length + 1];  // length + 1 for null terminator
 
-    char *allowed = "ABCDEFGHIJKLMOPQRSTUVWXYZ ";
+    char *allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
     
     for(int i = 0; i < length; i++)
     {
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     key[length] = '\0';
 
-    fprintf(stdout, "KEY: %s\n", key);
+    fprintf(stdout, "%s\n", key);
     fflush(stdout);
     
   return (0);
