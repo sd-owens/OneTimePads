@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 // Error function used for reporting issues
 void error(const char *msg) {
@@ -28,9 +29,9 @@ char convertToChar(int i) {
   char c;
 
   if (i == 26)
-    char = ' ';
+    c = ' ';
   else 
-    char = i + 'A';
+    c = i + 'A';
   
   return c;
 }
@@ -42,7 +43,6 @@ void encrypt(char *msg, char *key) {
 
   while (msg[i] != '\n') {
     
-    char c = msg[i];
     // convert to ascii code and encrypt
     temp = (convertToInt(msg[i]) + convertToInt(key[i])) % 27;
     msg[i] = convertToInt(temp);
@@ -67,12 +67,10 @@ void setupAddressStruct(struct sockaddr_in* address,
 }
 
 int main(int argc, char *argv[]){
-  int connectionSocket, charsRead;
+  int connectionSocket, charsRead, status;
   char buffer[256];
   struct sockaddr_in serverAddress, clientAddress;
   socklen_t sizeOfClientInfo = sizeof(clientAddress);
-
-  pid_t pid;
 
   // Check usage & args
   if (argc < 2) { 
@@ -110,7 +108,7 @@ int main(int argc, char *argv[]){
     }
 
     
-    pid = fork();
+    pid_t pid = fork();
 
     switch(pid){
       case -1:{
@@ -136,9 +134,10 @@ int main(int argc, char *argv[]){
         if (charsRead < 0){
           error("ERROR writing to socket");
         }
+        exit(0);
       }
       default:{
-        pid_t actualpid = waitpid(pid, &status, WNOHANG);
+        waitpid(pid, &status, WNOHANG);
       }
       
     }
