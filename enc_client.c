@@ -20,7 +20,7 @@
 // Error function used for reporting issues
 void error(const char *msg) { 
   perror(msg); 
-  exit(0); 
+  exit(1); 
 } 
 
 int getNumBytes(const char *name){
@@ -35,6 +35,9 @@ int getNumBytes(const char *name){
     
     if(c == EOF || c == '\n')
       break;
+
+    if(!isupper(c) && c != ' ')
+      error("enc_client error: input contains bad characters\n");
 
     numBytes++;
     c = fgetc(file);
@@ -71,7 +74,7 @@ void setupAddressStruct(struct sockaddr_in* address,
 
 int main(int argc, char *argv[]) {
 
-  int socketFD, portNumber, charsWritten, charsRead, bytesRead;
+  int socketFD, charsWritten, charsRead, bytesRead;
   struct sockaddr_in serverAddress;
   char buffer[256];
   // Check usage & args
@@ -104,14 +107,7 @@ int main(int argc, char *argv[]) {
       exit(1);
   }
 
-  // // Get input message from user
-  // printf("CLIENT: Enter text to send to the server, and then hit enter: ");
-  // // Clear out the buffer array
-  // memset(buffer, '\0', sizeof(buffer));
-  // // Get input from the user, trunc to buffer - 1 chars, leaving \0
-  // fgets(buffer, sizeof(buffer) - 1, stdin);
-  // // Remove the trailing \n that fgets adds
-  // buffer[strcspn(buffer, "\n")] = '\0'; 
+
 
   int fd = open(argv[1], 'r');
 
