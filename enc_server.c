@@ -9,7 +9,7 @@
 
 // Error function used for reporting issues
 void error(const char *msg) {
-  perror(msg);
+  fprintf(stderr, "%s", msg);
   exit(1);
 } 
 

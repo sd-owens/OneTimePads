@@ -19,7 +19,7 @@
 
 // Error function used for reporting issues
 void error(const char *msg) { 
-  perror(msg); 
+  fprintf(stderr, "%s", msg);
   exit(1); 
 } 
 
@@ -30,7 +30,6 @@ int getNumBytes(const char *name){
 
   char c = fgetc(file);
 
-  //TODO clean this up with DeMorgans Law
   while (1){
     
     if(c == EOF || c == '\n')
@@ -63,7 +62,7 @@ void setupAddressStruct(struct sockaddr_in* address,
   // Get the DNS entry for this host name
   struct hostent* hostInfo = gethostbyname(hostname); 
   if (hostInfo == NULL) { 
-    fprintf(stderr, "CLIENT: ERROR, no such host\n"); 
+    error("CLIENT: ERROR, no such host\n"); 
     exit(0); 
   }
   // Copy the first IP address from the DNS entry to sin_addr.s_addr
@@ -106,41 +105,29 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "Error: key '%s' is too short\n", argv[2]);
       exit(1);
   }
-
-
-
+  // Open file containing message
   int fd = open(argv[1], 'r');
-
   charsWritten = 0;
-
-  while(charsWritten <= fileBytes){
-    memset(buffer, '\0', sizeof(buffer));
-    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
-    memset(buffer, '\0', sizeof(buffer));
-  }
-
-  fd = open(argv[2], 'r');
-  charsWritten = 0;
-
-  while(charsWritten <= fileBytes){
-    memset(buffer, '\0', sizeof(buffer));
-    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
-    memset(buffer, '\0', sizeof(buffer));
-  }
-
   // Send message to server
   // Write to the server
-  // charsWritten = send(socketFD, buffer, strlen(buffer), 0); 
-  // if (charsWritten < 0){
-  //   error("CLIENT: ERROR writing to socket");
-  // }
-  // if (charsWritten < strlen(buffer)){
-  //   printf("CLIENT: WARNING: Not all data written to socket!\n");
-  // }
+  while(charsWritten <= fileBytes){
+    memset(buffer, '\0', sizeof(buffer));
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
+    memset(buffer, '\0', sizeof(buffer));
+  }
 
-
+  // Open file containing key
+  fd = open(argv[2], 'r');
+  charsWritten = 0;
+  // Send key to the server
+  // Write to the server
+  while(charsWritten <= fileBytes){
+    memset(buffer, '\0', sizeof(buffer));
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
+    memset(buffer, '\0', sizeof(buffer));
+  }
 
   // Get return message from server
   // Clear out the buffer again for reuse
