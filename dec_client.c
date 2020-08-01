@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Send identity of client to server for validation
-  char *id = "OTP_ENCRYPT";
+  char *id = "OTP_DECRYPT";
   charsWritten = send(socketFD, id, strlen(id), 0);
   memset(buffer, '\0', sizeof(buffer));
   if(charsWritten < 0){
