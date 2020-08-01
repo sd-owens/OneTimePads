@@ -45,9 +45,10 @@ void encrypt(char *msg, char *key) {
     
     // convert to ascii code and encrypt
     temp = (convertToInt(msg[i]) + convertToInt(key[i])) % 27;
-    msg[i] = convertToInt(temp);
+    msg[i] = convertToChar(temp);
     i++;
   }
+  msg[i] = '\0';
 
 }
 
