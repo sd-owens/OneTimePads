@@ -108,7 +108,6 @@ int main(int argc, char *argv[]){
       error("ERROR on accept");
     }
 
-    
     pid_t pid = fork();
 
     switch(pid){
@@ -118,8 +117,8 @@ int main(int argc, char *argv[]){
       case 0:{
 
         //printf("SERVER: Connected to client running at host %d port %d\n", 
-                          ntohs(clientAddress.sin_addr.s_addr),
-                          ntohs(clientAddress.sin_port));
+                          // ntohs(clientAddress.sin_addr.s_addr),
+                          // ntohs(clientAddress.sin_port));
 
         // Get the message from the client and display it
         memset(buffer, '\0', 2048);
@@ -155,7 +154,6 @@ int main(int argc, char *argv[]){
       }
       
     }
-
     // Close the connection socket for this client
     close(connectionSocket); 
   }

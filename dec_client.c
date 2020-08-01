@@ -4,8 +4,11 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <fcntl.h>
+#include <ctype.h>
 
 /**
 * Client code
@@ -19,6 +22,27 @@ void error(const char *msg) {
   perror(msg); 
   exit(0); 
 } 
+
+int getNumBytes(const char *name){
+  int numBytes = 0;
+
+  FILE *file = fopen(name, "r");
+
+  char c = fgetc(file);
+
+  //TODO clean this up with DeMorgans Law
+  while (1){
+    
+    if(c == EOF || c == '\n')
+      break;
+
+    numBytes++;
+    c = fgetc(file);
+  }
+  fclose(file);
+
+  return numBytes;
+}
 
 // Set up the address struct
 void setupAddressStruct(struct sockaddr_in* address, 
@@ -46,12 +70,13 @@ void setupAddressStruct(struct sockaddr_in* address,
 }
 
 int main(int argc, char *argv[]) {
-  int socketFD, portNumber, charsWritten, charsRead;
+
+  int socketFD, portNumber, charsWritten, charsRead, bytesRead;
   struct sockaddr_in serverAddress;
   char buffer[256];
   // Check usage & args
-  if (argc < 3) { 
-    fprintf(stderr,"USAGE: %s hostname port\n", argv[0]); 
+  if (argc < 4) { 
+    fprintf(stderr,"USAGE: %s hostname plaintext key port\n", argv[0]); 
     exit(0); 
   } 
 
@@ -60,32 +85,66 @@ int main(int argc, char *argv[]) {
   if (socketFD < 0){
     error("CLIENT: ERROR opening socket");
   }
-
+  // Make the socket reusable
+  int reuse = 1;
+  setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
    // Set up the server address struct
-  setupAddressStruct(&serverAddress, atoi(argv[2]), argv[1]);
+  setupAddressStruct(&serverAddress, atoi(argv[3]), "localhost");
 
   // Connect to server
   if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0){
     error("CLIENT: ERROR connecting");
   }
-  // Get input message from user
-  printf("CLIENT: Enter text to send to the server, and then hit enter: ");
-  // Clear out the buffer array
-  memset(buffer, '\0', sizeof(buffer));
-  // Get input from the user, trunc to buffer - 1 chars, leaving \0
-  fgets(buffer, sizeof(buffer) - 1, stdin);
-  // Remove the trailing \n that fgets adds
-  buffer[strcspn(buffer, "\n")] = '\0'; 
+
+  int fileBytes = getNumBytes(argv[1]);
+  int keyBytes = getNumBytes(argv[2]);
+
+  if(fileBytes > keyBytes) {
+      fprintf(stderr, "Error: key '%s' is too short\n", argv[2]);
+      exit(1);
+  }
+
+  // // Get input message from user
+  // printf("CLIENT: Enter text to send to the server, and then hit enter: ");
+  // // Clear out the buffer array
+  // memset(buffer, '\0', sizeof(buffer));
+  // // Get input from the user, trunc to buffer - 1 chars, leaving \0
+  // fgets(buffer, sizeof(buffer) - 1, stdin);
+  // // Remove the trailing \n that fgets adds
+  // buffer[strcspn(buffer, "\n")] = '\0'; 
+
+  int fd = open(argv[1], 'r');
+
+  charsWritten = 0;
+
+  while(charsWritten <= fileBytes){
+    memset(buffer, '\0', sizeof(buffer));
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
+    memset(buffer, '\0', sizeof(buffer));
+  }
+
+  fd = open(argv[2], 'r');
+  charsWritten = 0;
+
+  while(charsWritten <= fileBytes){
+    memset(buffer, '\0', sizeof(buffer));
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
+    memset(buffer, '\0', sizeof(buffer));
+  }
 
   // Send message to server
   // Write to the server
-  charsWritten = send(socketFD, buffer, strlen(buffer), 0); 
-  if (charsWritten < 0){
-    error("CLIENT: ERROR writing to socket");
-  }
-  if (charsWritten < strlen(buffer)){
-    printf("CLIENT: WARNING: Not all data written to socket!\n");
-  }
+  // charsWritten = send(socketFD, buffer, strlen(buffer), 0); 
+  // if (charsWritten < 0){
+  //   error("CLIENT: ERROR writing to socket");
+  // }
+  // if (charsWritten < strlen(buffer)){
+  //   printf("CLIENT: WARNING: Not all data written to socket!\n");
+  // }
+
+
 
   // Get return message from server
   // Clear out the buffer again for reuse
@@ -95,7 +154,8 @@ int main(int argc, char *argv[]) {
   if (charsRead < 0){
     error("CLIENT: ERROR reading from socket");
   }
-  printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
+  //printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
+  printf("%s\n", buffer);
 
   // Close the socket
   close(socketFD); 
