@@ -52,6 +52,14 @@ void encrypt(char *msg, char *key) {
 
 }
 
+void checkBackgroundPids()
+{
+    pid_t pid;
+    int childStatus;
+    // Check for terminated child background processes.    
+    while ((pid = waitpid(-1, &childStatus, WNOHANG)) > 0){}
+}
+
 // Set up the address struct for the server socket
 void setupAddressStruct(struct sockaddr_in* address, 
                         int portNumber){
@@ -100,6 +108,9 @@ int main(int argc, char *argv[]){
   
   // Accept a connection, blocking if one is not available until one connects
   while(1){
+
+    checkBackgroundPids();
+
     // Accept the connection request which creates a connection socket
     connectionSocket = accept(listenSocket, 
                 (struct sockaddr *)&clientAddress, 
