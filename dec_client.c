@@ -30,7 +30,6 @@ int getNumBytes(const char *name){
 
   char c = fgetc(file);
 
-  //TODO clean this up with DeMorgans Law
   while (1){
     
     if(c == EOF || c == '\n')
@@ -104,15 +103,6 @@ int main(int argc, char *argv[]) {
       exit(1);
   }
 
-  // // Get input message from user
-  // printf("CLIENT: Enter text to send to the server, and then hit enter: ");
-  // // Clear out the buffer array
-  // memset(buffer, '\0', sizeof(buffer));
-  // // Get input from the user, trunc to buffer - 1 chars, leaving \0
-  // fgets(buffer, sizeof(buffer) - 1, stdin);
-  // // Remove the trailing \n that fgets adds
-  // buffer[strcspn(buffer, "\n")] = '\0'; 
-
   int fd = open(argv[1], 'r');
 
   charsWritten = 0;
@@ -134,27 +124,12 @@ int main(int argc, char *argv[]) {
     memset(buffer, '\0', sizeof(buffer));
   }
 
-  // Send message to server
-  // Write to the server
-  // charsWritten = send(socketFD, buffer, strlen(buffer), 0); 
-  // if (charsWritten < 0){
-  //   error("CLIENT: ERROR writing to socket");
-  // }
-  // if (charsWritten < strlen(buffer)){
-  //   printf("CLIENT: WARNING: Not all data written to socket!\n");
-  // }
-
-
-
-  // Get return message from server
-  // Clear out the buffer again for reuse
   memset(buffer, '\0', sizeof(buffer));
   // Read data from the socket, leaving \0 at end
   charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); 
   if (charsRead < 0){
     error("CLIENT: ERROR reading from socket");
   }
-  //printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
   printf("%s\n", buffer);
 
   // Close the socket
