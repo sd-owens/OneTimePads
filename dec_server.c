@@ -36,7 +36,7 @@ char convertToChar(int i) {
   return c;
 }
 
-void encrypt(char *msg, char *key) {
+void decrypt(char *msg, char *key) {
 
   int i = 0;
   char temp;
@@ -44,7 +44,10 @@ void encrypt(char *msg, char *key) {
   while (msg[i] != '\n') {
     
     // convert to ascii code and encrypt
-    temp = (convertToInt(msg[i]) + convertToInt(key[i])) % 27;
+    temp = (convertToInt(msg[i]) - convertToInt(key[i]));
+    if (temp < 0){
+      temp += 27;
+    }
     msg[i] = convertToChar(temp);
     i++;
   }
@@ -140,7 +143,7 @@ int main(int argc, char *argv[]){
         //printf("SERVER: I received this key the client: \"%s\"\n", buffer);
         strcpy(key, buffer);
 
-        encrypt(message, key);
+        decrypt(message, key);
 
         // Send encrypted message back to the client
         charsRead = send(connectionSocket, message, sizeof(message), 0);
