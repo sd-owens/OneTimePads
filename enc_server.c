@@ -68,7 +68,7 @@ void setupAddressStruct(struct sockaddr_in* address,
 
 int main(int argc, char *argv[]){
   int connectionSocket, charsRead, status;
-  char buffer[256];
+  char buffer[2048], message[2048], key[2048];
   struct sockaddr_in serverAddress, clientAddress;
   socklen_t sizeOfClientInfo = sizeof(clientAddress);
 
@@ -115,22 +115,43 @@ int main(int argc, char *argv[]){
         error("failed to fork process!\n");
       }
       case 0:{
+
         printf("SERVER: Connected to client running at host %d port %d\n", 
                           ntohs(clientAddress.sin_addr.s_addr),
                           ntohs(clientAddress.sin_port));
 
         // Get the message from the client and display it
-        memset(buffer, '\0', 256);
+        memset(buffer, '\0', 2048);
         // Read the client's message from the socket
-        charsRead = recv(connectionSocket, buffer, 255, 0); 
+        charsRead = recv(connectionSocket, buffer, 2047, 0); 
         if (charsRead < 0){
           error("ERROR reading from socket");
         }
         printf("SERVER: I received this from the client: \"%s\"\n", buffer);
 
+        strcpy(message, buffer);
+
+        // Get the key from the client and display it
+        memset(buffer, '\0', 2048);
+        // Read the client's secret key from the socket
+        charsRead = recv(connectionSocket, buffer, 2047, 0); 
+        if (charsRead < 0){
+          error("ERROR reading from socket");
+        }
+        printf("SERVER: I received this key the client: \"%s\"\n", buffer);
+
+        strcpy(key, buffer);
+
+        //TODO encrypt message
+        encrypt(message, key);
+
         // Send a Success message back to the client
-        charsRead = send(connectionSocket, 
-                        "I am the server, and I got your message", 39, 0); 
+        // charsRead = send(connectionSocket, 
+        //                 "I am the server, and I got your message", 39, 0); 
+
+        // Send encrypted message back to the client
+        charsRead = send(connectionSocket, message, sizeof(message), 0);
+
         if (charsRead < 0){
           error("ERROR writing to socket");
         }
