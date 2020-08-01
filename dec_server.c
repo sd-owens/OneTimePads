@@ -8,9 +8,9 @@
 #include <unistd.h>
 
 // Error function used for reporting issues
-void error(const char *msg) {
-  perror(msg);
-  exit(1);
+void error(const char *msg, int errno) {
+  fprintf(stderr, "%s", msg);
+  exit(errno);
 } 
 
 int convertToInt (char c) {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
   // Create the socket that will listen for connections
   int listenSocket = socket(AF_INET, SOCK_STREAM, 0);
   if (listenSocket < 0) {
-    error("ERROR opening socket");
+    error("ERROR opening socket\n", 2);
   }
 
   // Set up the address struct for the server socket
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]){
   if (bind(listenSocket, 
           (struct sockaddr *)&serverAddress, 
           sizeof(serverAddress)) < 0){
-    error("ERROR on binding");
+    error("ERROR on binding\n", 2);
   }
 
   // Start listening for connetions. Allow up to 5 connections to queue up
@@ -108,14 +108,14 @@ int main(int argc, char *argv[]){
                 (struct sockaddr *)&clientAddress, 
                 &sizeOfClientInfo); 
     if (connectionSocket < 0){
-      error("ERROR on accept");
+      error("ERROR on accept\n", 2);
     }
 
     pid_t pid = fork();
 
     switch(pid){
       case -1:{
-        error("failed to fork process!\n");
+        error("failed to fork process!\n", 2);
       }
       case 0:{
 
@@ -123,12 +123,27 @@ int main(int argc, char *argv[]){
                           // ntohs(clientAddress.sin_addr.s_addr),
                           // ntohs(clientAddress.sin_port));
 
+// Get identity of client and validate
+        memset(buffer, '\0', 2048);
+        // Read the client's identity message from the socket
+        charsRead = recv(connectionSocket, buffer, 2047, 0);
+        if (charsRead < 0){
+          error("ERROR reading from socket\n", 2);
+        } 
+        if (strcmp(buffer, "OTP_ENCRYPT") != 0){
+          charsRead = send(connectionSocket, "INVALID", 7, 0);
+          exit(2);
+        } else {
+
+          memset(buffer, '\0', 2048);
+          charsRead = send(connectionSocket, "VALID", 5, 0);        
+        
         // Get the message from the client and display it
         memset(buffer, '\0', 2048);
         // Read the client's message from the socket
         charsRead = recv(connectionSocket, buffer, 2047, 0); 
         if (charsRead < 0){
-          error("ERROR reading from socket");
+          error("ERROR reading from socket\n", 2);
         }
         //printf("SERVER: I received this from the client: \"%s\"\n", buffer);
         strcpy(message, buffer);
@@ -138,7 +153,7 @@ int main(int argc, char *argv[]){
         // Read the client's secret key from the socket
         charsRead = recv(connectionSocket, buffer, 2047, 0); 
         if (charsRead < 0){
-          error("ERROR reading from socket");
+          error("ERROR reading from socket\n", 2);
         }
         //printf("SERVER: I received this key the client: \"%s\"\n", buffer);
         strcpy(key, buffer);
@@ -148,12 +163,13 @@ int main(int argc, char *argv[]){
         // Send encrypted message back to the client
         charsRead = send(connectionSocket, message, sizeof(message), 0);
         if (charsRead < 0){
-          error("ERROR writing to socket");
+          error("ERROR writing to socket\n", 2);
         }
         exit(0);
       }
+      }
       default:{
-        waitpid(pid, &status, WNOHANG);
+        waitpid(pid, &status, WNOHANG); 
       }
       
     }
