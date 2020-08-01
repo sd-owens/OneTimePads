@@ -18,9 +18,9 @@
 */
 
 // Error function used for reporting issues
-void error(const char *msg) { 
+void error(const char *msg, int errno) { 
   fprintf(stderr, "%s", msg);
-  exit(1); 
+  exit(errno); 
 } 
 
 int getNumBytes(const char *name){
@@ -36,7 +36,7 @@ int getNumBytes(const char *name){
       break;
 
     if(!isupper(c) && c != ' ')
-      error("enc_client error: input contains bad characters\n");
+      error("enc_client error: input contains bad characters\n", 1);
 
     numBytes++;
     c = fgetc(file);
@@ -62,7 +62,7 @@ void setupAddressStruct(struct sockaddr_in* address,
   // Get the DNS entry for this host name
   struct hostent* hostInfo = gethostbyname(hostname); 
   if (hostInfo == NULL) { 
-    error("CLIENT: ERROR, no such host\n"); 
+    error("CLIENT: ERROR, no such host\n", 2); 
     exit(0); 
   }
   // Copy the first IP address from the DNS entry to sin_addr.s_addr
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   // Create a socket
   socketFD = socket(AF_INET, SOCK_STREAM, 0); 
   if (socketFD < 0){
-    error("CLIENT: ERROR opening socket");
+    error("CLIENT: ERROR opening socket", 2);
   }
   // Make the socket reusable
   int reuse = 1;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   // Connect to server
   if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0){
-    error("CLIENT: ERROR connecting");
+    error("CLIENT: ERROR connecting", 2);
   }
 
   int fileBytes = getNumBytes(argv[1]);
@@ -105,6 +105,26 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "Error: key '%s' is too short\n", argv[2]);
       exit(1);
   }
+
+  //Send identity of client to server for validation
+  char *id = "OTP_ENCRYPT";
+  charsWritten = send(socketFD, id, strlen(id), 0);
+  memset(buffer, '\0', sizeof(buffer));
+  if(charsWritten < 0){
+    error("CLIENT: ERROR writing to socket\n", 2);
+  }
+  charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0);
+  if(charsRead < 0) {
+    error("CLIENT: ERROR reading from socket\n", 2);
+  }
+ 
+  if(strcmp(buffer, "INVALID") == 0){
+    memset(buffer, '\0', sizeof(buffer));
+    sprintf(buffer, "Error: could not contact enc_server on port %s\n", argv[3]);
+    error(buffer, 2);
+  }
+
+
   // Open file containing message
   int fd = open(argv[1], 'r');
   charsWritten = 0;
@@ -116,6 +136,7 @@ int main(int argc, char *argv[]) {
     charsWritten += send(socketFD, buffer, strlen(buffer), 0);
     memset(buffer, '\0', sizeof(buffer));
   }
+  close(fd);
 
   // Open file containing key
   fd = open(argv[2], 'r');
@@ -128,6 +149,7 @@ int main(int argc, char *argv[]) {
     charsWritten += send(socketFD, buffer, strlen(buffer), 0);
     memset(buffer, '\0', sizeof(buffer));
   }
+  close(fd);
 
   // Get return message from server
   // Clear out the buffer again for reuse
@@ -135,7 +157,7 @@ int main(int argc, char *argv[]) {
   // Read data from the socket, leaving \0 at end
   charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); 
   if (charsRead < 0){
-    error("CLIENT: ERROR reading from socket");
+    error("CLIENT: ERROR reading from socket\n", 2);
   }
   //printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
   printf("%s\n", buffer);
