@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   char buffer[256];
   // Check usage & args
   if (argc < 4) { 
-    fprintf(stderr,"USAGE: %s hostname plaintext key port\n", argv[0]); 
+    fprintf(stderr,"USAGE: %s hostname ciphertext key port\n", argv[0]); 
     exit(0); 
   } 
 
