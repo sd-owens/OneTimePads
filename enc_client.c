@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   // Create a socket
   socketFD = socket(AF_INET, SOCK_STREAM, 0); 
   if (socketFD < 0){
-    error("CLIENT: ERROR opening socket", 2);
+    error("CLIENT: ERROR opening socket\n", 2);
   }
   // Make the socket reusable
   int reuse = 1;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   // Connect to server
   if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0){
-    error("CLIENT: ERROR connecting", 2);
+    error("CLIENT: ERROR connecting\n", 2);
   }
 
   int fileBytes = getNumBytes(argv[1]);
@@ -123,7 +123,6 @@ int main(int argc, char *argv[]) {
     sprintf(buffer, "Error: could not contact enc_server on port %s\n", argv[3]);
     error(buffer, 2);
   }
-
 
   // Open file containing message
   int fd = open(argv[1], 'r');
