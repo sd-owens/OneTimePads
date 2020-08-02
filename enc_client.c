@@ -27,6 +27,9 @@ int getNumBytes(const char *name){
   int numBytes = 0;
 
   FILE *file = fopen(name, "r");
+  if(file == NULL){
+    error("CLIENT: Error opening specified file\n", 2);
+  }
 
   char c = fgetc(file);
 
@@ -126,12 +129,18 @@ int main(int argc, char *argv[]) {
 
   // Open file containing message
   int fd = open(argv[1], 'r');
+  if(fd == -1){
+    error("CLIENT: Could not open MESSAGE file\n", 2);
+  }
   charsWritten = 0;
   // Send message to server
   // Write to the server
   while(charsWritten <= fileBytes){
     memset(buffer, '\0', sizeof(buffer));
     bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    if(bytesRead < 0) {
+      error("CLIENT: ERROR reading from FD\n", 2);
+    }
     charsWritten += send(socketFD, buffer, strlen(buffer), 0);
     memset(buffer, '\0', sizeof(buffer));
   }
@@ -139,12 +148,18 @@ int main(int argc, char *argv[]) {
 
   // Open file containing key
   fd = open(argv[2], 'r');
+  if(fd == -1){
+    error("CLIENT: Could not open KEY file\n", 2);
+  }
   charsWritten = 0;
   // Send key to the server
   // Write to the server
   while(charsWritten <= fileBytes){
     memset(buffer, '\0', sizeof(buffer));
     bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    if(bytesRead < 0) {
+      error("CLIENT: ERROR reading from FD\n", 2);
+    }
     charsWritten += send(socketFD, buffer, strlen(buffer), 0);
     memset(buffer, '\0', sizeof(buffer));
   }
