@@ -201,7 +201,6 @@ int main(int argc, char *argv[]) {
     charsRead += charsSent;
     strcat(plaintext, buffer);
   }
-  strcat(plaintext, "\n");  // terminate plaintext with newline.
   
   //printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
   printf("%s\n", plaintext);
