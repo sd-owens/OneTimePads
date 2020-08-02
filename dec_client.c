@@ -10,6 +10,8 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+#define MAX_SIZE  65536
+
 /**
 * Client code
 * 1. Create a socket and connect to the server specified in the command arugments.
@@ -30,7 +32,6 @@ int getNumBytes(const char *name){
   if(file == NULL){
     error("CLIENT: Error opening specified file\n", 2);
   }
-  
 
   char c = fgetc(file);
 
@@ -41,6 +42,7 @@ int getNumBytes(const char *name){
 
     if(!isupper(c) && c != ' ')
       error("dec_client error: input contains bad characters\n", 1);    
+    
     numBytes++;
     c = fgetc(file);
   }
@@ -78,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   int socketFD, charsWritten, charsRead, bytesRead;
   struct sockaddr_in serverAddress;
-  char buffer[256];
+  char buffer[MAX_SIZE];
   // Check usage & args
   if (argc < 4) { 
     fprintf(stderr,"USAGE: %s hostname ciphertext key port\n", argv[0]); 

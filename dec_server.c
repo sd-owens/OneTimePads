@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
+#define MAX_SIZE  65536
+
 // Error function used for reporting issues
 void error(const char *msg, int errno) {
   fprintf(stderr, "%s", msg);
@@ -80,7 +82,7 @@ void setupAddressStruct(struct sockaddr_in* address,
 
 int main(int argc, char *argv[]){
   int connectionSocket, charsRead, status;
-  char buffer[2048], message[2048], key[2048];
+  char buffer[MAX_SIZE], message[MAX_SIZE], key[MAX_SIZE];
   struct sockaddr_in serverAddress, clientAddress;
   socklen_t sizeOfClientInfo = sizeof(clientAddress);
 
@@ -135,9 +137,9 @@ int main(int argc, char *argv[]){
                           // ntohs(clientAddress.sin_port));
 
         // Get identity of client and validate
-        memset(buffer, '\0', 2048);
+        memset(buffer, '\0', sizeof(buffer));
         // Read the client's identity message from the socket
-        charsRead = recv(connectionSocket, buffer, 2047, 0);
+        charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0);
         if (charsRead < 0){
           error("ERROR reading from socket\n", 2);
         } 
@@ -146,13 +148,13 @@ int main(int argc, char *argv[]){
           exit(2);
         } else {
 
-          memset(buffer, '\0', 2048);
+          memset(buffer, '\0', sizeof(buffer));
           charsRead = send(connectionSocket, "VALID", 5, 0);        
         
         // Get the message from the client and display it
-        memset(buffer, '\0', 2048);
+        memset(buffer, '\0', sizeof(buffer));
         // Read the client's message from the socket
-        charsRead = recv(connectionSocket, buffer, 2047, 0); 
+        charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0); 
         if (charsRead < 0){
           error("ERROR reading from socket\n", 2);
         }
@@ -160,9 +162,9 @@ int main(int argc, char *argv[]){
         strcpy(message, buffer);
 
         // Get the key from the client and display it
-        memset(buffer, '\0', 2048);
+        memset(buffer, '\0', sizeof(buffer));
         // Read the client's secret key from the socket
-        charsRead = recv(connectionSocket, buffer, 2047, 0); 
+        charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0); 
         if (charsRead < 0){
           error("ERROR reading from socket\n", 2);
         }
