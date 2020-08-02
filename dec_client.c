@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 
-#define MAX_SIZE  65536
+#define MAX_SIZE  98304  //96K
 
 /**
 * Client code

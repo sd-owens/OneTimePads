@@ -7,7 +7,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define MAX_SIZE  65536
+#define MAX_SIZE  98304  //96K
 
 // Error function used for reporting issues
 void error(const char *msg, int errno) {
