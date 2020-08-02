@@ -10,7 +10,8 @@
 #include <fcntl.h>
 #include <ctype.h>
 
-#define MAX_SIZE  98304  //96K
+#define MSG_MAX  98304  //96K
+#define BUF_SIZE 1024
 
 /**
 * Client code
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
 
   int socketFD, charsWritten, charsRead, bytesRead;
   struct sockaddr_in serverAddress;
-  char buffer[MAX_SIZE];
+  char buffer[BUF_SIZE], ciphertext[MSG_MAX];
   // Check usage & args
   if (argc < 4) { 
     fprintf(stderr,"USAGE: %s hostname plaintext key port\n", argv[0]); 
@@ -129,54 +130,81 @@ int main(int argc, char *argv[]) {
     error(buffer, 2);
   }
 
-  // Open file containing message
-  int fd = open(argv[1], 'r');
-  if(fd == -1){
-    error("CLIENT: Could not open MESSAGE file\n", 2);
-  }
+  // Send the server the length of the message file
   charsWritten = 0;
-  // Send message to server
-  // Write to the server
-  while(charsWritten <= fileBytes){
-    memset(buffer, '\0', sizeof(buffer));
-    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-    if(bytesRead < 0) {
-      error("CLIENT: ERROR reading from FD\n", 2);
-    }
-    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
-    memset(buffer, '\0', sizeof(buffer));
+  memset(buffer, '\0', sizeof(buffer));
+  sprintf(buffer, "%d", fileBytes);
+  charsWritten = send(socketFD, buffer, sizeof(buffer), 0); /////////
+  if(charsWritten < 0){
+    error("CLIENT: ERROR writing to socket\n", 2);
   }
-  close(fd);
 
-  // Open file containing key
-  fd = open(argv[2], 'r');
-  if(fd == -1){
-    error("CLIENT: Could not open KEY file\n", 2);
+  // Wait for server response to continue transmission
+  memset(buffer, '\0', sizeof(buffer));
+	charsRead = 0;
+	while(charsRead == 0) {
+    charsRead = recv(socketFD, buffer, sizeof(buffer)-1, 0);
   }
-  charsWritten = 0;
-  // Send key to the server
-  // Write to the server
-  while(charsWritten <= fileBytes){
-    memset(buffer, '\0', sizeof(buffer));
-    bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-    if(bytesRead < 0) {
-      error("CLIENT: ERROR reading from FD\n", 2);
+		
+  if(strcmp(buffer, "continue") == 0){
+    // Open file containing message
+    int fd = open(argv[1], 'r');
+    if(fd == -1){
+      error("CLIENT: Could not open MESSAGE file\n", 2);
     }
-    charsWritten += send(socketFD, buffer, strlen(buffer), 0);
-    memset(buffer, '\0', sizeof(buffer));
+    
+    // Send message to server
+    // Write to the server
+    charsWritten = 0;
+    while(charsWritten <= fileBytes){
+      memset(buffer, '\0', sizeof(buffer));
+      bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+      if(bytesRead < 0) {
+        error("CLIENT: ERROR reading from FD\n", 2);
+      }
+      charsWritten += send(socketFD, buffer, strlen(buffer), 0);
+      memset(buffer, '\0', sizeof(buffer));
+    }
+    close(fd);
+
+    // Open file containing key
+    fd = open(argv[2], 'r');
+    if(fd == -1){
+      error("CLIENT: Could not open KEY file\n", 2);
+    }
+    charsWritten = 0;
+    // Send key to the server
+    // Write to the server
+    while(charsWritten <= fileBytes){
+      memset(buffer, '\0', sizeof(buffer));
+      bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+      if(bytesRead < 0) {
+        error("CLIENT: ERROR reading from FD\n", 2);
+      }
+      charsWritten += send(socketFD, buffer, strlen(buffer), 0);
+      memset(buffer, '\0', sizeof(buffer));
+    }
+    close(fd);
   }
-  close(fd);
 
   // Get return message from server
   // Clear out the buffer again for reuse
-  memset(buffer, '\0', sizeof(buffer));
-  // Read data from the socket, leaving \0 at end
-  charsRead = recv(socketFD, buffer, sizeof(buffer) - 1, 0); 
-  if (charsRead < 0){
+  int charsSent = 0;
+  charsRead = 0;
+  while (charsRead < fileBytes){
+    memset(buffer, '\0', sizeof(buffer));
+    // Read data from the socket, leaving \0 at end
+    charsSent = recv(socketFD, buffer, sizeof(buffer) - 1, 0);
+    if (charsSent < 0){
     error("CLIENT: ERROR reading from socket\n", 2);
+    } 
+    charsRead += charsSent;
+    strcat(ciphertext, buffer);
   }
+  strcat(ciphertext, "\n");  // terminate cipher text with newline.
+
   //printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
-  printf("%s\n", buffer);
+  printf("%s\n", ciphertext);
 
   // Close the socket
   close(socketFD); 
