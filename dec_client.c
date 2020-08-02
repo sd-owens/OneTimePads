@@ -13,13 +13,6 @@
 #define MSG_MAX  98304  //96K
 #define BUF_SIZE 1024
 
-/**
-* Client code
-* 1. Create a socket and connect to the server specified in the command arugments.
-* 2. Prompt the user for input and send that input as a message to the server.
-* 3. Print the message received from the server and exit the program.
-*/
-
 // Error function used for reporting issues
 void error(const char *msg, int errno) { 
   fprintf(stderr, "%s", msg);
@@ -107,12 +100,13 @@ int main(int argc, char *argv[]) {
   int fileBytes = getNumBytes(argv[1]);
   int keyBytes = getNumBytes(argv[2]);
 
+  // Check if key is sufficient size for decryption
   if(fileBytes > keyBytes) {
       fprintf(stderr, "Error: key '%s' is too short\n", argv[2]);
       exit(1);
   }
 
-  //Send identity of client to server for validation
+  // Send identity of client to server for validation
   char *id = "OTP_DECRYPT";
   charsWritten = send(socketFD, id, strlen(id), 0);
   memset(buffer, '\0', sizeof(buffer));
@@ -124,6 +118,7 @@ int main(int argc, char *argv[]) {
     error("CLIENT: ERROR reading from socket\n", 2);
   }
  
+  // If validation fails with server, terminate connection
   if(strcmp(buffer, "INVALID") == 0){
     memset(buffer, '\0', sizeof(buffer));
     sprintf(buffer, "Error: could not contact enc_server on port %s\n", argv[3]);
@@ -187,7 +182,7 @@ int main(int argc, char *argv[]) {
   close(fd);
   }
 
-   // Get return message from server
+  // Get return message from server
   // Clear out the buffer again for reuse
   int charsSent = 0;
   charsRead = 0;

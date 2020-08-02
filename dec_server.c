@@ -16,6 +16,7 @@ void error(const char *msg, int errno) {
   exit(errno);
 } 
 
+// Convert a char to integer representation decryption algorithm
 int convertToInt (char c) {
 
   int value = 0;
@@ -23,11 +24,12 @@ int convertToInt (char c) {
   if ( c == ' ')
     value = 26;
   else
-    value = c - 'A';  // character arithmetic for ascii value
+    value = c - 'A';  // character arithmetic
 
   return value;
 }
 
+// Convert an integer back to a character following encryption arithmetic
 char convertToChar(int i) {
   char c;
 
@@ -38,7 +40,7 @@ char convertToChar(int i) {
   
   return c;
 }
-
+// Decryption algorithm for one-time-pad
 void decrypt(char *msg, char *key) {
 
   int i = 0;
@@ -46,7 +48,7 @@ void decrypt(char *msg, char *key) {
 
   while (msg[i] != '\n') {
     
-    // convert to ascii code and encrypt
+    // convert to ascii code and decrypt
     temp = (convertToInt(msg[i]) - convertToInt(key[i]));
     if (temp < 0){
       temp += 27;
@@ -55,9 +57,9 @@ void decrypt(char *msg, char *key) {
     i++;
   }
   msg[i] = '\0';
-
 }
 
+// Check for defunct (terminated) spawned child processes
 void checkBackgroundPids()
 {
     pid_t pid;
@@ -188,6 +190,7 @@ int main(int argc, char *argv[]){
             strcat(key, buffer);
           }
 
+          // Decrypt message based on provided key
           decrypt(message, key);
 
           // Send decrypted message back to the client
@@ -200,14 +203,12 @@ int main(int argc, char *argv[]){
             }
             memset(buffer, '\0', sizeof(buffer));
           }
-
           exit(0);
         }
       }
       default:{
         waitpid(pid, &status, WNOHANG); 
       }
-      
     }
     // Close the connection socket for this client
     close(connectionSocket); 
