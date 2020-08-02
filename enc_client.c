@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
     charsRead += charsSent;
     strcat(ciphertext, buffer);
   }
-  strcat(ciphertext, "\n");  // terminate cipher text with newline.
+  strcat(ciphertext, "\n");  // terminate ciphertext with newline.
 
   //printf("CLIENT: I received this from the server: \"%s\"\n", buffer);
   printf("%s\n", ciphertext);

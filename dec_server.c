@@ -7,7 +7,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define MAX_SIZE  98304  //96K
+#define MSG_MAX  98304  //96K
+#define BUF_SIZE 1024
 
 // Error function used for reporting issues
 void error(const char *msg, int errno) {
@@ -81,8 +82,8 @@ void setupAddressStruct(struct sockaddr_in* address,
 }
 
 int main(int argc, char *argv[]){
-  int connectionSocket, charsRead, status;
-  char buffer[MAX_SIZE], message[MAX_SIZE], key[MAX_SIZE];
+  int connectionSocket, charsRead, charsSent, charsWritten, status;
+  char buffer[BUF_SIZE], message[MSG_MAX], key[MSG_MAX];
   struct sockaddr_in serverAddress, clientAddress;
   socklen_t sizeOfClientInfo = sizeof(clientAddress);
 
@@ -149,40 +150,61 @@ int main(int argc, char *argv[]){
         } else {
 
           memset(buffer, '\0', sizeof(buffer));
-          charsRead = send(connectionSocket, "VALID", 5, 0);        
-        
-        // Get the message from the client and display it
-        memset(buffer, '\0', sizeof(buffer));
-        // Read the client's message from the socket
-        charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0); 
-        if (charsRead < 0){
-          error("ERROR reading from socket\n", 2);
-        }
-        //printf("SERVER: I received this from the client: \"%s\"\n", buffer);
-        strcpy(message, buffer);
+          charsRead = send(connectionSocket, "VALID", 5, 0);
 
-        // Get the key from the client and display it
-        memset(buffer, '\0', sizeof(buffer));
-        // Read the client's secret key from the socket
-        charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0); 
-        if (charsRead < 0){
-          error("ERROR reading from socket\n", 2);
-        }
-        //printf("SERVER: I received this key the client: \"%s\"\n", buffer);
-        strcpy(key, buffer);
+          // Get the size of the message from the client
+          charsRead = 0;
+          charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0); 
 
-        decrypt(message, key);
+          int msgSize = atoi(buffer);
+          charsRead = send(connectionSocket, "continue", 8, 0);
 
-        // Send encrypted message back to the client
-        charsRead = send(connectionSocket, message, sizeof(message), 0);
-        if (charsRead < 0){
-          error("ERROR writing to socket\n", 2);
+          // Get the message from the client and display it
+          // Read the client's message from the socket
+          charsRead = 0;
+          charsSent = 0;
+          while(charsRead < msgSize){
+            memset(buffer, '\0', sizeof(buffer));
+            charsSent = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0);
+            charsRead += charsSent;
+            if (charsRead < 0){
+            error("ERROR reading from socket\n", 2);
+            }
+            charsSent = 0;
+            strcat(message, buffer);
+          }
+          // Get the key from the client and display it
+          // Read the client's secret key from the socket
+          charsRead = 0;
+          charsSent = 0;
+          while(charsRead < msgSize){
+            memset(buffer, '\0', sizeof(buffer));
+            charsSent = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0);
+            charsRead += charsSent;
+            if (charsRead < 0){
+            error("ERROR reading from socket\n", 2);
+            }
+            charsSent = 0;
+            strcat(key, buffer);
+          }
+
+          decrypt(message, key);
+
+          // Send decrypted message back to the client
+          charsWritten = 0;
+          while(charsWritten < msgSize){
+            memset(buffer, '\0', sizeof(buffer));
+            charsWritten += send(connectionSocket, message, sizeof(message), 0);
+            if (charsWritten < 0){
+            error("ERROR writing to socket\n", 2);
+            }
+            memset(buffer, '\0', sizeof(buffer));
+          }
+
+          exit(0);
         }
-        exit(0);
-      }
       }
       default:{
-
         waitpid(pid, &status, WNOHANG); 
       }
       
